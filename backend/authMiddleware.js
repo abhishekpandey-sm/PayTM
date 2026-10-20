@@ -1,11 +1,11 @@
-const JWT_SECRET = require("./config")
+const {JWT_SECRET} = require("./config")
 const jwt = require("jsonwebtoken")
 
 
 const authMiddleware = (req, res, next) => {
     const authHeader = req.headers.authorization;
 
-    if(!authHeader || !authHeader.startswith("Bearer ")){
+    if(!authHeader || !authHeader.startsWith("Bearer ")){
         return res.status(401).json({
             message: "Authorization Token Missing"
         })
@@ -22,7 +22,7 @@ const authMiddleware = (req, res, next) => {
             })
         }
 
-        res.userId = decoded.userId;
+        req.userId = decoded.userId;
         
         next();
     } catch(error){
