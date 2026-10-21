@@ -128,6 +128,30 @@ userRouter.post("/signin", async (req, res) => {
 
 })
 
+userRouter.get("/me", authMiddleware, async(req, res) => {
+    const userId = req.userId
+
+    try {
+        const user = await User.findById(userId);
+
+        if(!user){
+            return res.status(404).json({
+                message: "User Not Found" // Although i don't think this would ever happen as the authMIddleware would have validated the token little while ago 
+            })
+        }
+
+        return res.status(200).json({
+           firstName: user.firstName,
+           lastName:  user.lastName
+        })
+    } catch(err){
+        console.log("Error: ", err)
+        return res.status(500).json({
+            message: "Internal Server Error"
+        })
+    }
+})
+
 const updateBodySchema = zod.object({
     password: zod.string(6, {error: "Password must be atleast 6 characters long"}).optional(),
     firstName: zod.string().optional(),
@@ -177,10 +201,7 @@ userRouter.get("/bulk", authMiddleware, async (req, res) => {
             })
         }
 
-        const escapedFilter = filter.replace(
-            /[.*+?^${}()|[\]\\]/g,
-            "//$&"
-        )
+        const escapedFilter = filter.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
         const users = await User.find({
             $or:[
