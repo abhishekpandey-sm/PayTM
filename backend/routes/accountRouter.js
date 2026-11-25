@@ -1,7 +1,7 @@
 const express = require("express");
 const { authMiddleware } = require("../authMiddleware");
 const { Account } = require("../db");
-const { mongoose } = require("mongoose");
+const  mongoose  = require("mongoose");
 
 const accountRouter = express.Router();
 
@@ -89,10 +89,12 @@ accountRouter.post("/transfer", authMiddleware, async (req, res) => {
                 throw new Error("Recipient account update failed")
             }
 
-            return res.json({
-                message: "Transfer successful"
-            });
         })
+
+        return res.json({
+            message: "Transfer successful"
+        });
+
     } catch(error){
         console.error(error)
 
