@@ -1,6 +1,8 @@
 const mongoose = require("mongoose");
 
-mongoose.connect("mongodb://localhost:27017/paytm");
+mongoose.connect("mongodb://127.0.0.1:27017/paytm")
+  .then(() => console.log("MongoDB connected"))
+  .catch(err => console.error("MongoDB connection failed:", err));
 
 const userSchema = new mongoose.Schema({
     username: {
@@ -14,7 +16,7 @@ const userSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: ture,
+        required: true,
         minLength: 6
     },
     firstName: {
@@ -31,9 +33,24 @@ const userSchema = new mongoose.Schema({
     }
 })
 
+const accountSchema = new mongoose.Schema({
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+        unique: true
+    },
+    balance: {
+        type: Number,
+        required: true
+    }
+})
+
 
 const User = mongoose.model("User", userSchema )
+const Account = mongoose.model("Account", accountSchema)
 
 module.exports = {
-    User
+    User,
+    Account
 }

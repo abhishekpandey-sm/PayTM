@@ -1,7 +1,8 @@
 const express = require("express");
-const JWT_SECRET = require("../config");
+const {JWT_SECRET} = require("../config");
 const zod = require("zod");
-const { User } = require("../db");
+const { User } = require("../db"); 
+const { Account } = require("../db");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const {authMiddleware} = require("../authMiddleware")
@@ -37,7 +38,7 @@ userRouter.post("/signup", async (req, res) => {
 
         const { username, password, firstName, lastName} = req.body;
 
-        const hashedPassword =  bcrypt.hash(password, 10)
+        const hashedPassword = await bcrypt.hash(password, 10)
 
         const user = await User.create({
             username: username,
@@ -47,6 +48,11 @@ userRouter.post("/signup", async (req, res) => {
         })
 
         const userId = user._id;
+
+        const account = await Account.create({
+            userId,
+            balance: 1 + Math.random().toFixed(5) * 100000
+        })
 
         const token = jwt.sign({
             userId,
@@ -110,7 +116,8 @@ userRouter.post("/signin", async (req, res) => {
         )
 
         return res.status(200).json({
-            message: "SignIn Successful"
+            message: "SignIn Successful",
+            token: token
         })
     } catch(error){
         console.log(error)
@@ -160,10 +167,49 @@ userRouter.put("/",authMiddleware, async (req, res) => {
 
 })
 
-userRouter.get("/bulk", authMiddleware, (req, res) => {
+userRouter.get("/bulk", authMiddleware, async (req, res) => {
+    try{    
+        const filter = req.query.filter || ""
+
+        if (typeof filter !== "string"){
+            return res.status(400).json({
+                message: "Invalid Filter"
+            })
+        }
+
+        const escapedFilter = filter.replace(
+            /[.*+?^${}()|[\]\\]/g,
+            "//$&"
+        )
+
+        const users = await User.find({
+            $or:[
+                {firstName: { $regex: escapedFilter, $options: "i" }},
+                {lastName: { $regex: escapedFilter, $options: "i" }}
+            ]
+        })
+        .select("username firstName lastName")
+        .limit(20)
+
+        return res.status(200).json({
+            users: users.map(user => ({
+                _id: user._id,
+                username: user.username,
+                firstName: user.firstName,
+                lastName: user.lastName
+            }))
+        })
+
+
+    } catch(error){
+        console.error(error)
+        return res.status(500).json({
+            message: "Internal Server Error"
+        })
+    }
+
+
     
 })
 
-module.exports = {
-    userRouter
-}
+module.exports =  userRouter
